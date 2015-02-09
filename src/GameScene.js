@@ -4,7 +4,12 @@
 var GameLayer = cc.Layer.extend({
 	sprite:null,
 	_bird:null,
+
 	ctor:function () {
+		var _isStarted=false;
+		var _gravity = 1.75;
+		var _velocity = 0;
+		var _jump=9.6;
 		//////////////////////////////
 		// 1. super init first
 		this._super();
@@ -24,7 +29,7 @@ var GameLayer = cc.Layer.extend({
 		});
 		this.addChild(backGround,0);
 
-		//add Bird
+
 		//add Bird
 		_bird=new cc.Sprite(res.Bird_png);
 		_bird.attr({
@@ -81,7 +86,32 @@ var GameLayer = cc.Layer.extend({
 			}
 		};
 
-
+		this.schedule(update,0.1);
+		function update(dt){
+			if(_isStarted){
+				if(_bird.getPositionY()>130){
+					_bird.setPositionY(_bird.getPositionY()+ _velocity);
+					_velocity-=_gravity;
+				}
+				else{
+					cc.log("Game Over..");
+					this.unschedule(update);
+					this.unschedule(scrollGround);
+					_bird.stopAllActions();
+					
+				}
+			}
+			else{
+				
+				cc.log("Tap To Start");
+			}
+			
+			
+		};
+		function jump(dt){
+			_velocity=_jump;
+			
+		};
 		//touch event
 		//Create a "one by one" touch event listener (processes one touch at a time)
 		var listener1 = cc.EventListener.create({
@@ -98,6 +128,9 @@ var GameLayer = cc.Layer.extend({
 			//Process the touch end event
 			onTouchEnded: function (touch, event) {         
 				cc.log("Touch Layer... ");
+				if(!_isStarted)
+					_isStarted=true;
+				jump();
 
 			}
 		});
