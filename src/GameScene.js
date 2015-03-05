@@ -3,21 +3,19 @@
 
 var GameLayer = cc.Layer.extend({
 	sprite:null,
-	_bird:null,
+	_bird:null, 
+	_pipes:[],
 
 	ctor:function () {
 		var _isStarted=false;
-		var _gravity = 1.75;
+		var _gravity = 0.5;
 		var _velocity = 0;
-		var _jump=9.6;
+		var _jump=6.6;
 		//////////////////////////////
 		// 1. super init first
 		this._super();
-
-
 		// ask the window size
 		var size = cc.winSize;
-
 
 		var backGround=new cc.Sprite(res.BackGround_png);
 		backGround.attr({
@@ -86,25 +84,57 @@ var GameLayer = cc.Layer.extend({
 			}
 		};
 
-		this.schedule(update,0.1);
+		this.schedule(update);
+		this.schedule(this.addPipe,5);
 		function update(dt){
 			if(_isStarted){
-				if(_bird.getPositionY()>130){
-					_bird.setPositionY(_bird.getPositionY()+ _velocity);
-					_velocity-=_gravity;
-				}
-				else{
+					if(_bird.getPositionY()>130){
+						_bird.setPositionY(_bird.getPositionY()+ _velocity);
+						_velocity-=_gravity;
+						if(_bird.getPositionY()>480)
+							_bird.setPositionY(480);
+						
+						//Move pipes
+						for(i=0;i<this._pipes.length;i++ ){
+							var curPipe=this._pipes[i];
+							curPipe.setPositionX(curPipe.getPositionX()-1);
+							//chec collision 
+		
+							
+							//remove Object in End path
+							if(curPipe.getPositionX()< -30){
+								this._pipes.splice(i,1);
+								this.removeChild(curPipe, true);
+								
+							}
+							var BirdRec=cc.rect(_bird.getPositionX(),_bird.getPositionY(),_bird._getWidth(),_bird.getBoundingBox().width);
+							if(cc.rectIntersectsRect(_bird.getBoundingBox(), curPipe.getBoundingBox())){
+								cc.log("Game Over..");
+								this.unschedule(update);
+								this.unschedule(scrollGround);
+								_bird.stopAllActions();
+							}
+
+								
+						}   
+								
+					}
+					else{
 					cc.log("Game Over..");
 					this.unschedule(update);
 					this.unschedule(scrollGround);
 					_bird.stopAllActions();
+
 					
 				}
+					
 			}
 			else{
 				
 				cc.log("Tap To Start");
 			}
+			var pipe;
+
 			
 			
 		};
@@ -112,6 +142,7 @@ var GameLayer = cc.Layer.extend({
 			_velocity=_jump;
 			
 		};
+
 		//touch event
 		//Create a "one by one" touch event listener (processes one touch at a time)
 		var listener1 = cc.EventListener.create({
@@ -119,6 +150,9 @@ var GameLayer = cc.Layer.extend({
 			swallowTouches: true,
 			//onTouchBegan event callback function                      
 			onTouchBegan: function (touch, event) { 
+				if(!_isStarted)
+					_isStarted=true;
+				jump();
 					return true;
 			},
 			//Trigger when moving touch
@@ -128,17 +162,40 @@ var GameLayer = cc.Layer.extend({
 			//Process the touch end event
 			onTouchEnded: function (touch, event) {         
 				cc.log("Touch Layer... ");
-				if(!_isStarted)
-					_isStarted=true;
-				jump();
+
 
 			}
 		});
 		cc.eventManager.addListener(listener1, this);
 
 		return true;
-	}
+	},
+	addPipe:function(){
+		//add top pipe
+		var topPipe=new cc.Sprite(res.PipeUp_png);
+		topPipe.setAnchorPoint(0.5, 0);
+		topPipe.attr({
+			x:350,
+			y:Math.floor((Math.random() * (400-320)) + 320)
 
+		});
+		this.addChild(topPipe,0);
+		this._pipes.push(topPipe);
+		
+		var btmPipe=new cc.Sprite(res.PipeDown_png);
+		btmPipe.setAnchorPoint(0.5,1);
+		btmPipe.attr({
+			x:350,
+			y:topPipe.getPositionY()-150
+
+		});
+		
+		this.addChild(btmPipe,0);
+		this._pipes.push(btmPipe);
+		
+
+		
+	}
 
 });
 
